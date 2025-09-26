@@ -1,101 +1,128 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Order Progress</title>
-    <style>
-        body {
-            font-family: Montserrat, sans-serif;
-            padding: 20px;
-        }
+<meta charset="UTF-8">
+<title>Order Progress</title>
+<style>
+body {
+    font-family: Montserrat, sans-serif;
+    padding: 20px;
+}
 
-        .progress-stages {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 20px;
-        }
+.progress-stages {
+    display: flex;
+    align-items: center;
+    margin-top: 20px;
+    position: relative;
+}
 
-        .stage {
-            flex: 0 0 100px; /* narrower boxes */
-            padding: 10px;
-            background: #cce7ff; /* light blue */
-            text-align: center;
-            border-radius: 10px; /* slightly more rounded corners */
-            margin-right: 10px;
-            transition: background 0.3s;
-            position: relative;
-        }
+.stage {
+    flex: 0 0 100px; /* box width */
+    padding: 10px;
+    background: #cce7ff; /* light blue */
+    text-align: center;
+    border-radius: 10px;
+    position: relative;
+    z-index: 1;
+}
 
-        .stage:last-child {
-            margin-right: 0;
-        }
+.stage.completed {
+    background: #4CAF50;
+    color: white;
+}
 
-        .stage.completed {
-            background: #4CAF50;
-            color: white;
-        }
+/* Connecting line */
+.progress-stages::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50px; /* half the box width */
+    right: 50px; /* half the box width */
+    height: 2px; /* line thickness */
+    background: #ccc;
+    z-index: 0;
+    transform: translateY(-50%);
+}
 
-        .stage::after {
-            content: '';
-            position: absolute;
-            top: 50%;
-            right: -10px;
-            width: 20px;
-            height: 1px; /* thinner line */
-            background: #ccc;
-            transform: translateY(-50%);
-            z-index: -1;
-        }
-
-        .stage.completed::after {
-            background: #4CAF50;
-        }
-
-        .stage:last-child::after {
-            display: none;
-        }
-    </style>
+/* Completed part of line */
+.progress-stages::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50px;
+    height: 2px;
+    background: #4CAF50;
+    z-index: 0;
+    transform: translateY(-50%);
+    width: 0; /* JS will set width based on progress */
+    transition: width 0.3s;
+}
+</style>
 </head>
 <body>
-    <h2>Order Progress</h2>
+<h2>Order Progress</h2>
 
-    <div class="progress-stages">
-        <div id="CREATED" class="stage">Created</div>
-        <div id="SHIPPED" class="stage">Shipped</div>
-        <div id="ARRIVED" class="stage">Arrived</div>
-        <div id="DELIVERED" class="stage">Delivered</div>
-    </div>
+<div class="progress-stages">
+    <div id="CREATED" class="stage">Created</div>
+    <div id="SHIPPED" class="stage">Shipped</div>
+    <div id="ARRIVED" class="stage">Arrived</div>
+    <div id="DELIVERED" class="stage">Delivered</div>
+</div>
 
-    <script>
-        const stages = [
-            { name: "Created", key: "CREATED" },
-            { name: "Shipped", key: "SHIPPED" },
-            { name: "Arrived", key: "ARRIVED" },
-            { name: "Delivered", key: "DELIVERED" }
-        ];
+<script>
+const stages = [
+    { name: "Created", key: "CREATED" },
+    { name: "Shipped", key: "SHIPPED" },
+    { name: "Arrived", key: "ARRIVED" },
+    { name: "Delivered", key: "DELIVERED" }
+];
 
-        const params = new URLSearchParams(window.location.search);
-        const clientRef = params.get('CLIENT_REF');
+const params = new URLSearchParams(window.location.search);
+const clientRef = params.get('CLIENT_REF');
 
-        if (clientRef) {
-            fetch(`http://192.168.13.201:6000/order-progress?CLIENT_REF=${clientRef}`)
-                .then(res => res.json())
-                .then(data => {
-                    stages.forEach(stage => {
-                        const div = document.getElementById(stage.key);
-                        if (data[stage.key]) {
-                            div.classList.add('completed');
-                            div.textContent = `${stage.name} ✔`;
-                        }
-                    });
-                })
-                .catch(err => {
-                    console.error('Error fetching progress:', err);
-                    alert('Failed to fetch order progress.');
-                });
-        } else {
-            document.body.insertAdjacentHTML('beforeend', '<p>No CLIENT_REF provided.</p>');
-        }
-    </script>
+function updateLineProgress(completedCount) {
+    const totalStages = stages.length;
+    const line = document.querySelector('.progress-stages::after'); // pseudo-element can't be accessed in JS
+    // Instead, we'll create a real div for completed line:
+    let completedLine = document.getElementById('completed-line');
+    if (!completedLine) {
+        completedLine = document.createElement('div');
+        completedLine.id = 'completed-line';
+        completedLine.style.position = 'absolute';
+        completedLine.style.top = '50%';
+        completedLine.style.left = '50px';
+        completedLine.style.height = '2px';
+        completedLine.style.background = '#4CAF50';
+        completedLine.style.transform = 'translateY(-50%)';
+        completedLine.style.zIndex = '0';
+        document.querySelector('.progress-stages').appendChild(completedLine);
+    }
+    const stageSpacing = document.querySelector('.progress-stages').offsetWidth - 100; // total line length
+    completedLine.style.width = `${(completedCount - 1)/(totalStages - 1) * stageSpacing}px`;
+}
+
+if (clientRef) {
+    fetch(`http://192.168.13.201:6000/order-progress?CLIENT_REF=${clientRef}`)
+        .then(res => res.json())
+        .then(data => {
+            let completedCount = 0;
+            stages.forEach(stage => {
+                const div = document.getElementById(stage.key);
+                if (data[stage.key]) {
+                    div.classList.add('completed');
+                    div.textContent = `${stage.name} ✔`;
+                    completedCount++;
+                }
+            });
+            updateLineProgress(completedCount);
+        })
+        .catch(err => {
+            console.error('Error fetching progress:', err);
+            alert('Failed to fetch order progress.');
+        });
+} else {
+    document.body.insertAdjacentHTML('beforeend', '<p>No CLIENT_REF provided.</p>');
+}
+</script>
 </body>
 </html>
