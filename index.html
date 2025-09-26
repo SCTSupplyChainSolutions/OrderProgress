@@ -13,9 +13,9 @@ body { font-family: Montserrat, sans-serif; padding: 20px; }
   margin-top: 50px;
 }
 .progress-circle {
-  width: 40px;
-  height: 40px;
-  background-color: #6D9BD6; /* light blue */
+  width: 50px;
+  height: 50px;
+  background: linear-gradient(145deg, #3399FF, #66CCFF); /* shiny blue gradient */
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -24,10 +24,12 @@ body { font-family: Montserrat, sans-serif; padding: 20px; }
   position: relative;
   font-weight: bold;
   color: white;
+  font-size: 14px;
+  transition: background 0.3s, transform 0.3s;
 }
 .progress-line {
-  height: 1px;
-  background-color: #ccc; /* grey line */
+  height: 4px;
+  background-color: #ccc; /* grey connecting line */
   position: absolute;
   top: 50%;
   left: 0;
@@ -35,19 +37,21 @@ body { font-family: Montserrat, sans-serif; padding: 20px; }
   z-index: 0;
   transform: translateY(-50%);
 }
+.completed {
+  background: #4CAF50 !important; /* green for completed */
+  color: white;
+  transform: scale(1.1);
+}
 .stage-labels {
   display: flex;
   justify-content: space-between;
   margin-top: 10px;
+  font-weight: 500;
 }
 .stage-label {
-  width: 40px;
+  width: 50px;
   text-align: center;
-  font-weight: 500;
   font-size: 14px;
-}
-.completed {
-  background-color: #4CAF50 !important; /* green for completed */
 }
 </style>
 </head>
@@ -57,17 +61,10 @@ body { font-family: Montserrat, sans-serif; padding: 20px; }
 
 <div class="progress-container">
   <div id="line" class="progress-line"></div>
-  <div id="CREATED" class="progress-circle">1</div>
-  <div id="SHIPPED" class="progress-circle">2</div>
-  <div id="ARRIVED" class="progress-circle">3</div>
-  <div id="DELIVERED" class="progress-circle">4</div>
-</div>
-
-<div class="stage-labels">
-  <div class="stage-label">Created</div>
-  <div class="stage-label">Shipped</div>
-  <div class="stage-label">Arrived</div>
-  <div class="stage-label">Delivered</div>
+  <div id="CREATED" class="progress-circle">Created</div>
+  <div id="SHIPPED" class="progress-circle">Shipped</div>
+  <div id="ARRIVED" class="progress-circle">Arrived</div>
+  <div id="DELIVERED" class="progress-circle">Delivered</div>
 </div>
 
 <script>
@@ -83,14 +80,14 @@ const params = new URLSearchParams(window.location.search);
 const clientRef = params.get('CLIENT_REF');
 
 if(clientRef) {
-    fetch(`http://192.168.13.201:6000/order-progress?CLIENT_REF=${clientRef}`)
+    fetch(`http://192.168.13.201:5000/order-progress?CLIENT_REF=${clientRef}`)
     .then(res => res.json())
     .then(data => {
-        stages.forEach((stage, index) => {
+        stages.forEach(stage => {
             const circle = document.getElementById(stage.key);
             if(data[stage.key]) {
                 circle.classList.add('completed');
-                circle.textContent = '✔';
+                circle.textContent = stage.name + " ✔";
             }
         });
     })
