@@ -4,43 +4,70 @@
 <meta charset="UTF-8">
 <title>Order Progress</title>
 <style>
-body { font-family: Montseratt, sans-serif; padding: 20px; }
-.progress-stages { display: flex; justify-content: space-between; margin-top: 20px; }
-.stage {
-  flex: 1;
-  padding: 10px;
-  background: #eee;
-  text-align: center;
-  border-radius: 5px;
-  margin-right: 10px;
-  transition: background 0.3s;
+body { font-family: Montserrat, sans-serif; padding: 20px; }
+.progress-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   position: relative;
+  margin-top: 50px;
 }
-.stage:last-child { margin-right: 0; }
-.stage.completed { background: #4CAF50; color: white; }
-.stage::after {
-  content: '';
+.progress-circle {
+  width: 40px;
+  height: 40px;
+  background-color: #ADD8E6; /* light blue */
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+  position: relative;
+  font-weight: bold;
+  color: white;
+}
+.progress-line {
+  height: 4px;
+  background-color: #ccc; /* grey line */
   position: absolute;
   top: 50%;
-  right: -10px;
-  width: 20px;
-  height: 4px;
-  background: #ccc;
+  left: 0;
+  right: 0;
+  z-index: 0;
   transform: translateY(-50%);
-  z-index: -1;
 }
-.stage.completed::after { background: #4CAF50; }
-.stage:last-child::after { display: none; }
+.stage-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+}
+.stage-label {
+  width: 40px;
+  text-align: center;
+  font-weight: 500;
+  font-size: 14px;
+}
+.completed {
+  background-color: #4CAF50 !important; /* green for completed */
+}
 </style>
 </head>
 <body>
+
 <h2>Order Progress</h2>
 
-<div class="progress-stages">
-  <div id="CREATED" class="stage">Created</div>
-  <div id="SHIPPED" class="stage">Shipped</div>
-  <div id="ARRIVED" class="stage">Arrived</div>
-  <div id="DELIVERED" class="stage">Delivered</div>
+<div class="progress-container">
+  <div id="line" class="progress-line"></div>
+  <div id="CREATED" class="progress-circle">1</div>
+  <div id="SHIPPED" class="progress-circle">2</div>
+  <div id="ARRIVED" class="progress-circle">3</div>
+  <div id="DELIVERED" class="progress-circle">4</div>
+</div>
+
+<div class="stage-labels">
+  <div class="stage-label">Created</div>
+  <div class="stage-label">Shipped</div>
+  <div class="stage-label">Arrived</div>
+  <div class="stage-label">Delivered</div>
 </div>
 
 <script>
@@ -51,7 +78,7 @@ const stages = [
     { name: "Delivered", key: "DELIVERED" }
 ];
 
-// Read CLIENT_REF from URL parameters (passed from Metabase iframe)
+// Read CLIENT_REF from URL parameters
 const params = new URLSearchParams(window.location.search);
 const clientRef = params.get('CLIENT_REF');
 
@@ -59,11 +86,11 @@ if(clientRef) {
     fetch(`http://192.168.13.201:6000/order-progress?CLIENT_REF=${clientRef}`)
     .then(res => res.json())
     .then(data => {
-        stages.forEach(stage => {
-            const div = document.getElementById(stage.key);
+        stages.forEach((stage, index) => {
+            const circle = document.getElementById(stage.key);
             if(data[stage.key]) {
-                div.classList.add('completed');
-                div.textContent = `${stage.name} ✔`;
+                circle.classList.add('completed');
+                circle.textContent = '✔';
             }
         });
     })
@@ -75,5 +102,6 @@ if(clientRef) {
     document.body.insertAdjacentHTML('beforeend', '<p>No CLIENT_REF provided.</p>');
 }
 </script>
+
 </body>
 </html>
