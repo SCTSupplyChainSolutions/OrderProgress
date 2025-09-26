@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Order Progress</title>
+<style>
+body { font-family: Arial, sans-serif; padding: 20px; }
+.progress-stages { display: flex; justify-content: space-between; margin-top: 20px; }
+.stage {
+  flex: 1;
+  padding: 10px;
+  background: #eee;
+  text-align: center;
+  border-radius: 5px;
+  margin-right: 10px;
+  transition: background 0.3s;
+  position: relative;
+}
+.stage:last-child { margin-right: 0; }
+.stage.completed { background: #4CAF50; color: white; }
+.stage::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: -10px;
+  width: 20px;
+  height: 4px;
+  background: #ccc;
+  transform: translateY(-50%);
+  z-index: -1;
+}
+.stage.completed::after { background: #4CAF50; }
+.stage:last-child::after { display: none; }
+</style>
+</head>
+<body>
+<h2>Order Progress</h2>
+
+<div class="progress-stages">
+  <div id="CREATED" class="stage">Created</div>
+  <div id="SHIPPED" class="stage">Shipped</div>
+  <div id="ARRIVED" class="stage">Arrived</div>
+  <div id="DELIVERED" class="stage">Delivered</div>
+</div>
+
+<script>
+const stages = [
+    { name: "Created", key: "CREATED" },
+    { name: "Shipped", key: "SHIPPED" },
+    { name: "Arrived", key: "ARRIVED" },
+    { name: "Delivered", key: "DELIVERED" }
+];
+
+// Read CLIENT_REF from URL parameters (passed from Metabase iframe)
+const params = new URLSearchParams(window.location.search);
+const clientRef = params.get('CLIENT_REF');
+
+if(clientRef) {
+    fetch(`http://192.168.13.201:6000/order-progress?CLIENT_REF=${clientRef}`)
+    .then(res => res.json())
+    .then(data => {
+        stages.forEach(stage => {
+            const div = document.getElementById(stage.key);
+            if(data[stage.key]) {
+                div.classList.add('completed');
+                div.textContent = `${stage.name} ✔`;
+            }
+        });
+    })
+    .catch(err => {
+        console.error('Error fetching progress:', err);
+        alert('Failed to fetch order progress.');
+    });
+} else {
+    document.body.insertAdjacentHTML('beforeend', '<p>No CLIENT_REF provided.</p>');
+}
+</script>
+</body>
+</html>
