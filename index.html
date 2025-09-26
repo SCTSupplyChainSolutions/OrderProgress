@@ -11,51 +11,52 @@ body {
 
 .progress-stages {
     display: flex;
+    justify-content: space-between; /* evenly space boxes */
     align-items: center;
-    margin-top: 20px;
     position: relative;
+    margin-top: 50px;
 }
 
 .stage {
-    flex: 0 0 100px; /* box width */
+    flex: 1;
+    max-width: 100px; /* optional max width */
     padding: 10px;
-    background: #cce7ff; /* light blue */
+    background: #75aefa; /* light blue */
     text-align: center;
     border-radius: 10px;
     position: relative;
     z-index: 1;
 }
 
-.stage.completed {
-    background: #4CAF50;
-    color: white;
-}
-
-/* Connecting line */
+/* Connecting line between boxes */
 .progress-stages::before {
     content: '';
     position: absolute;
     top: 50%;
-    left: 50px; /* half the box width */
-    right: 50px; /* half the box width */
-    height: 2px; /* line thickness */
+    left: 0;
+    right: 0;
+    height: 2px; /* thinner line */
     background: #ccc;
     z-index: 0;
     transform: translateY(-50%);
 }
 
-/* Completed part of line */
-.progress-stages::after {
-    content: '';
+/* Completed line (dynamic width via JS) */
+#completed-line {
     position: absolute;
     top: 50%;
-    left: 50px;
+    left: 0;
     height: 2px;
     background: #4CAF50;
-    z-index: 0;
     transform: translateY(-50%);
-    width: 0; /* JS will set width based on progress */
+    z-index: 0;
+    width: 0;
     transition: width 0.3s;
+}
+
+.stage.completed {
+    background: #4CAF50;
+    color: white;
 }
 </style>
 </head>
@@ -67,6 +68,7 @@ body {
     <div id="SHIPPED" class="stage">Shipped</div>
     <div id="ARRIVED" class="stage">Arrived</div>
     <div id="DELIVERED" class="stage">Delivered</div>
+    <div id="completed-line"></div> <!-- dynamic green line -->
 </div>
 
 <script>
@@ -82,23 +84,18 @@ const clientRef = params.get('CLIENT_REF');
 
 function updateLineProgress(completedCount) {
     const totalStages = stages.length;
-    const line = document.querySelector('.progress-stages::after'); // pseudo-element can't be accessed in JS
-    // Instead, we'll create a real div for completed line:
-    let completedLine = document.getElementById('completed-line');
-    if (!completedLine) {
-        completedLine = document.createElement('div');
-        completedLine.id = 'completed-line';
-        completedLine.style.position = 'absolute';
-        completedLine.style.top = '50%';
-        completedLine.style.left = '50px';
-        completedLine.style.height = '2px';
-        completedLine.style.background = '#4CAF50';
-        completedLine.style.transform = 'translateY(-50%)';
-        completedLine.style.zIndex = '0';
-        document.querySelector('.progress-stages').appendChild(completedLine);
+    const container = document.querySelector('.progress-stages');
+    const line = document.getElementById('completed-line');
+    if (completedCount <= 1) {
+        line.style.width = '0';
+        return;
     }
-    const stageSpacing = document.querySelector('.progress-stages').offsetWidth - 100; // total line length
-    completedLine.style.width = `${(completedCount - 1)/(totalStages - 1) * stageSpacing}px`;
+    // Distance between first and last stage center
+    const firstStage = container.children[0].getBoundingClientRect();
+    const lastStage = container.children[completedCount - 1].getBoundingClientRect();
+    const containerRect = container.getBoundingClientRect();
+    const width = (lastStage.left + lastStage.width / 2) - (firstStage.left + firstStage.width / 2);
+    line.style.width = width + 'px';
 }
 
 if (clientRef) {
@@ -115,6 +112,7 @@ if (clientRef) {
                 }
             });
             updateLineProgress(completedCount);
+            window.addEventListener('resize', () => updateLineProgress(completedCount)); // adjust line on resize
         })
         .catch(err => {
             console.error('Error fetching progress:', err);
