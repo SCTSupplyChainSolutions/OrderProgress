@@ -1,106 +1,102 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Order Progress</title>
-<style>
-body { font-family: Montserrat, sans-serif; padding: 20px; }
-.progress-container {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  position: relative;
-  margin-top: 50px;
-}
-.progress-rect {
-  min-width: 100px;
-  height: 50px;
-  background: linear-gradient(145deg, #3399FF, #66CCFF); /* shiny blue gradient */
-  border-radius: 15px; /* rounded corners */
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1;
-  position: relative;
-  font-weight: bold;
-  color: white;
-  font-size: 14px;
-  transition: background 0.3s, transform 0.3s;
-  text-align: center;
-  padding: 0 10px;
-}
-.progress-line {
-  height: 4px;
-  background-color: #ccc; /* grey connecting line */
-  position: absolute;
-  top: 50%;
-  left: 0;
-  right: 0;
-  z-index: 0;
-  transform: translateY(-50%);
-}
-.completed {
-  background: #4CAF50 !important; /* green for completed */
-  color: white;
-  transform: scale(1.1);
-}
-.stage-labels {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 10px;
-  font-weight: 500;
-}
-.stage-label {
-  width: 50px;
-  text-align: center;
-  font-size: 14px;
-}
-</style>
+    <meta charset="UTF-8">
+    <title>Order Progress</title>
+    <style>
+        body {
+            font-family: Montserrat, sans-serif;
+            padding: 20px;
+        }
+
+        .progress-stages {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+
+        .stage {
+            flex: 1;
+            padding: 10px;
+            background: #eee;
+            text-align: center;
+            border-radius: 5px;
+            margin-right: 10px;
+            transition: background 0.3s;
+            position: relative;
+        }
+
+        .stage:last-child {
+            margin-right: 0;
+        }
+
+        .stage.completed {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .stage::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            right: -10px;
+            width: 20px;
+            height: 4px;
+            background: #ccc;
+            transform: translateY(-50%);
+            z-index: -1;
+        }
+
+        .stage.completed::after {
+            background: #4CAF50;
+        }
+
+        .stage:last-child::after {
+            display: none;
+        }
+    </style>
 </head>
 <body>
+    <h2>Order Progress</h2>
 
-<h2>Order Progress</h2>
+    <div class="progress-stages">
+        <div id="CREATED" class="stage">Created</div>
+        <div id="SHIPPED" class="stage">Shipped</div>
+        <div id="ARRIVED" class="stage">Arrived</div>
+        <div id="DELIVERED" class="stage">Delivered</div>
+    </div>
 
-<div class="progress-container">
-  <div id="line" class="progress-line"></div>
-  <div id="CREATED" class="progress-circle">Created</div>
-  <div id="SHIPPED" class="progress-circle">Shipped</div>
-  <div id="ARRIVED" class="progress-circle">Arrived</div>
-  <div id="DELIVERED" class="progress-circle">Delivered</div>
-</div>
+    <script>
+        const stages = [
+            { name: "Created", key: "CREATED" },
+            { name: "Shipped", key: "SHIPPED" },
+            { name: "Arrived", key: "ARRIVED" },
+            { name: "Delivered", key: "DELIVERED" }
+        ];
 
-<script>
-const stages = [
-    { name: "Created", key: "CREATED" },
-    { name: "Shipped", key: "SHIPPED" },
-    { name: "Arrived", key: "ARRIVED" },
-    { name: "Delivered", key: "DELIVERED" }
-];
+        // Read CLIENT_REF from URL parameters (passed from Metabase iframe)
+        const params = new URLSearchParams(window.location.search);
+        const clientRef = params.get('CLIENT_REF');
 
-// Read CLIENT_REF from URL parameters
-const params = new URLSearchParams(window.location.search);
-const clientRef = params.get('CLIENT_REF');
-
-if(clientRef) {
-    fetch(`http://192.168.13.201:5000/order-progress?CLIENT_REF=${clientRef}`)
-    .then(res => res.json())
-    .then(data => {
-        stages.forEach(stage => {
-            const circle = document.getElementById(stage.key);
-            if(data[stage.key]) {
-                circle.classList.add('completed');
-                circle.textContent = stage.name + " ✔";
-            }
-        });
-    })
-    .catch(err => {
-        console.error('Error fetching progress:', err);
-        alert('Failed to fetch order progress.');
-    });
-} else {
-    document.body.insertAdjacentHTML('beforeend', '<p>No CLIENT_REF provided.</p>');
-}
-</script>
-
+        if (clientRef) {
+            fetch(`http://192.168.13.201:6000/order-progress?CLIENT_REF=${clientRef}`)
+                .then(res => res.json())
+                .then(data => {
+                    stages.forEach(stage => {
+                        const div = document.getElementById(stage.key);
+                        if (data[stage.key]) {
+                            div.classList.add('completed');
+                            div.textContent = `${stage.name} ✔`;
+                        }
+                    });
+                })
+                .catch(err => {
+                    console.error('Error fetching progress:', err);
+                    alert('Failed to fetch order progress.');
+                });
+        } else {
+            document.body.insertAdjacentHTML('beforeend', '<p>No CLIENT_REF provided.</p>');
+        }
+    </script>
 </body>
 </html>
