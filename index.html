@@ -12,11 +12,11 @@ body { font-family: Montserrat, sans-serif; padding: 20px; }
   position: relative;
   margin-top: 50px;
 }
-.progress-circle {
-  width: 50px;
+.progress-rect {
+  min-width: 100px;
   height: 50px;
   background: linear-gradient(145deg, #3399FF, #66CCFF); /* shiny blue gradient */
-  border-radius: 50%;
+  border-radius: 15px; /* rounded corners */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -26,6 +26,8 @@ body { font-family: Montserrat, sans-serif; padding: 20px; }
   color: white;
   font-size: 14px;
   transition: background 0.3s, transform 0.3s;
+  text-align: center;
+  padding: 0 10px;
 }
 .progress-line {
   height: 4px;
